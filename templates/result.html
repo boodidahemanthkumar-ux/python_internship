@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection Results | VisionSense AI</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="brand brand-link">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">VisionSense AI</h1>
+                    <span class="brand-badge">Academic Project</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Detect Another Image</span>
+                </a>
+                <a href="{{ url_for('download_result', filename=filename) }}" class="btn btn-primary btn-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Download Processed Image</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+        <!-- Results Header Banner -->
+        <section class="results-header">
+            <div>
+                <h2 class="hero-title">Detection Analytics</h2>
+                <p class="hero-subtitle">
+                    YOLO11n model inference completed. Objects detected, localized, and labeled below.
+                </p>
+            </div>
+            <div class="result-quick-actions">
+                <a href="{{ url_for('index') }}" class="btn btn-outline">← Detect Another</a>
+                <a href="{{ url_for('download_result', filename=filename) }}" class="btn btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download Image
+                </a>
+            </div>
+        </section>
+
+        <!-- KPI Metrics Row -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Detections</div>
+                <div class="metric-value">{{ data.total_detections }}</div>
+                <div class="metric-footer">Objects localized</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Distinct Classes</div>
+                <div class="metric-value">{{ data.class_counts|length }}</div>
+                <div class="metric-footer">Unique categories</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Inference Time</div>
+                <div class="metric-value">{{ data.processing_time_ms }} <span class="metric-unit">ms</span></div>
+                <div class="metric-footer">({{ data.processing_time }}s CPU latency)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Confidence Threshold</div>
+                <div class="metric-value">{{ (data.conf_threshold * 100)|round|int }}%</div>
+                <div class="metric-footer">Filter parameter</div>
+            </div>
+        </section>
+
+        <!-- Image Comparison Section -->
+        <section class="card comparison-card">
+            <div class="comparison-header">
+                <h3 class="card-title">Visual Comparison</h3>
+                <div class="comparison-tabs" id="viewTabs">
+                    <button type="button" class="tab-btn active" data-view="side-by-side">Side by Side</button>
+                    <button type="button" class="tab-btn" data-view="processed-only">Processed View</button>
+                    <button type="button" class="tab-btn" data-view="original-only">Original View</button>
+                </div>
+            </div>
+
+            <!-- Side by Side Container -->
+            <div class="image-comparison-grid" id="comparisonContainer">
+                <div class="image-box" id="processedBox">
+                    <div class="image-box-header">
+                        <span class="image-tag tag-processed">Processed (YOLO11n + OpenCV)</span>
+                        <span class="image-meta-text">{{ data.image_dimensions.width }} × {{ data.image_dimensions.height }} px</span>
+                    </div>
+                    <div class="image-frame">
+                        <img src="{{ result_url }}" alt="Processed Detection Result" class="responsive-result-img" id="resultImg">
+                    </div>
+                </div>
+
+                <div class="image-box" id="originalBox">
+                    <div class="image-box-header">
+                        <span class="image-tag tag-original">Original Image</span>
+                        <span class="image-meta-text">Source Upload</span>
+                    </div>
+                    <div class="image-frame">
+                        <img src="{{ original_url }}" alt="Original Uploaded Image" class="responsive-result-img" id="originalImg">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Class Breakdown & Detections Table -->
+        <div class="results-detail-grid">
+            <!-- Left: Class-Wise Counts -->
+            <section class="card summary-breakdown-card">
+                <h3 class="card-title">Class-Wise Counts</h3>
+                {% if data.class_counts %}
+                    <ul class="class-summary-list">
+                        {% for class_name, count in data.class_counts.items() %}
+                            <li class="class-summary-row">
+                                <span class="class-name-badge">{{ class_name }}</span>
+                                <span class="class-count-pill">{{ count }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <!-- Empty State for Classes -->
+                    <div class="empty-state">
+                        <p class="empty-title">No Objects Detected</p>
+                        <p class="empty-text">No target classes met the confidence threshold of {{ (data.conf_threshold * 100)|round|int }}%.</p>
+                    </div>
+                {% endif %}
+            </section>
+
+            <!-- Right: Detailed Detections Table -->
+            <section class="card detections-table-card">
+                <div class="table-card-header">
+                    <h3 class="card-title">Detected Objects List</h3>
+                    <span class="badge badge-info">{{ data.total_detections }} Items</span>
+                </div>
+
+                {% if data.detections %}
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Class Label</th>
+                                    <th>Confidence</th>
+                                    <th>Bounding Box [x1, y1, x2, y2]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in data.detections %}
+                                    <tr>
+                                        <td>{{ item.id }}</td>
+                                        <td>
+                                            <span class="color-indicator" style="background-color: {{ item.color }};"></span>
+                                            <strong>{{ item.class_name }}</strong>
+                                        </td>
+                                        <td>
+                                            <div class="confidence-bar-wrapper">
+                                                <div class="confidence-bar" style="width: {{ item.confidence_pct }}%; background-color: {{ item.color }};"></div>
+                                            </div>
+                                            <span class="conf-value-text">{{ item.confidence_pct }}%</span>
+                                        </td>
+                                        <td>
+                                            <code class="coord-tag">[{{ item.bbox[0] }}, {{ item.bbox[1] }}, {{ item.bbox[2] }}, {{ item.bbox[3] }}]</code>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        <h4 class="empty-title">No Detections Found</h4>
+                        <p class="empty-text">
+                            No objects were recognized with confidence &ge; {{ (data.conf_threshold * 100)|round|int }}%.
+                            Try detecting another image or lowering the confidence slider on the upload page.
+                        </p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-sm">Try Another Image</a>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+
+        <!-- Academic Presentation Notes Card -->
+        <section class="card tech-explainer-card">
+            <h3 class="card-title">Presentation & Viva Reference Notes</h3>
+            <div class="explainer-columns">
+                <div class="explainer-col">
+                    <h4>Why YOLO11n?</h4>
+                    <p>
+                        YOLO11 is Ultralytics' newest model series. The 'n' (nano) variant has just ~2.6M parameters,
+                        making it lightweight enough for real-time CPU deployment in academic demos without needing dedicated GPU hardware.
+                    </p>
+                </div>
+                <div class="explainer-col">
+                    <h4>Detection vs. Classification</h4>
+                    <p>
+                        Image Classification predicts <em>what</em> is in an image (one label). Object Detection identifies
+                        <em>what</em> and <em>where</em> (bounding box coordinates) for multiple simultaneous objects.
+                    </p>
+                </div>
+                <div class="explainer-col">
+                    <h4>OpenCV Integration</h4>
+                    <p>
+                        OpenCV validates the decoded byte stream, verifies pixel arrays, and renders anti-aliased
+                        bounding boxes and contrasting label badges onto the original image matrix.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p><strong>Python Internship Project:</strong> Image Recognition and Object Detection System</p>
+            <p class="footer-subtext">Flask • OpenCV • Ultralytics YOLO11n</p>
+        </div>
+    </footer>
+
+    <!-- Result Scripts -->
+    <script>
+        // Tab switching logic for Side by Side vs Single view
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('#viewTabs .tab-btn');
+            const processedBox = document.getElementById('processedBox');
+            const originalBox = document.getElementById('originalBox');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const viewMode = tab.dataset.view;
+                    if (viewMode === 'side-by-side') {
+                        processedBox.style.display = 'block';
+                        originalBox.style.display = 'block';
+                    } else if (viewMode === 'processed-only') {
+                        processedBox.style.display = 'block';
+                        originalBox.style.display = 'none';
+                    } else if (viewMode === 'original-only') {
+                        processedBox.style.display = 'none';
+                        originalBox.style.display = 'block';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

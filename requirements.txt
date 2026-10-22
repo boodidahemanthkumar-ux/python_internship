@@ -1,0 +1,14 @@
+# Core Web Framework
+Flask>=3.0.0
+werkzeug>=3.0.0
+
+# Deep Learning & Object Detection
+ultralytics>=8.3.0
+
+# Computer Vision & Image Processing
+opencv-python-headless>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Testing Framework
+pytest>=7.4.0

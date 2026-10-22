@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Recognition & Object Detection System | Python Internship Project</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">VisionSense AI</h1>
+                    <span class="brand-badge">Academic Project</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <span class="badge badge-tech">YOLO11n Pretrained</span>
+                <span class="badge badge-tech">OpenCV</span>
+                <span class="badge badge-tech">Flask</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-badge">AI / Computer Vision Internship Project</div>
+            <h2 class="hero-title">Image Recognition & Object Detection</h2>
+            <p class="hero-subtitle">
+                Upload an image to detect multiple everyday objects in real-time using state-of-the-art
+                <strong>YOLO11n</strong> deep learning architecture and <strong>OpenCV</strong> bounding box visualization.
+            </p>
+        </section>
+
+        <!-- Flash Messages & Errors -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <svg class="alert-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if error_msg %}
+            <div class="alert-container">
+                <div class="alert alert-error">
+                    <svg class="alert-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>{{ error_msg }}</span>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Upload & Settings Card -->
+        <section class="card upload-card">
+            <form id="detectionForm" action="{{ url_for('detect') }}" method="POST" enctype="multipart/form-data">
+                <!-- Dropzone Area -->
+                <div class="dropzone" id="dropzone">
+                    <input type="file" name="image" id="fileInput" accept=".jpg,.jpeg,.png,.webp" class="file-input-hidden" required>
+                    
+                    <!-- Empty State (Default) -->
+                    <div class="dropzone-content" id="dropzoneEmpty">
+                        <div class="upload-icon-wrapper">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <p class="dropzone-prompt"><strong>Click to browse</strong> or drag and drop an image here</p>
+                        <p class="dropzone-hint">Supports: JPG, JPEG, PNG, WEBP (Max 10 MB)</p>
+                    </div>
+
+                    <!-- Preview State (Shown when file is selected) -->
+                    <div class="dropzone-preview" id="dropzonePreview" style="display: none;">
+                        <img id="previewImage" src="" alt="Selected Preview" class="preview-img">
+                        <div class="preview-meta">
+                            <div class="preview-file-info">
+                                <span id="previewName" class="preview-filename">image.jpg</span>
+                                <span id="previewSize" class="preview-filesize">0 KB</span>
+                            </div>
+                            <button type="button" id="removeFileBtn" class="btn btn-secondary btn-sm" title="Remove selected image">
+                                Remove Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection Settings -->
+                <div class="settings-panel">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <label for="confRange" class="setting-label">
+                                Confidence Threshold
+                                <span class="info-tooltip" title="Filters detections: only objects predicted with confidence at or above this threshold will be shown.">ⓘ</span>
+                            </label>
+                            <span id="confDisplay" class="conf-badge">25% (0.25)</span>
+                        </div>
+                        <input type="range" id="confRange" name="confidence" min="0.05" max="0.95" step="0.05" value="{{ default_conf }}" class="range-slider">
+                        <div class="range-marks">
+                            <span>5% (Permissive)</span>
+                            <span>Default (25%)</span>
+                            <span>95% (Strict)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button Area -->
+                <div class="action-bar">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span>Detect Objects</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Loading Overlay (Shown during inference) -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-box">
+                <div class="scanner-spinner"></div>
+                <h3 class="loading-title">Detecting Objects...</h3>
+                <p class="loading-desc">Running YOLO11n neural network inference and rendering bounding boxes with OpenCV.</p>
+                <div class="loading-progress-bar">
+                    <div class="loading-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Presentation Info Section -->
+        <section class="card info-grid-card">
+            <h3 class="section-title">System Workflow & Architecture</h3>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-number">1</div>
+                    <div class="feature-text">
+                        <h4>Image Ingestion & Validation</h4>
+                        <p>Uploads are validated for allowed format (JPG/PNG/WEBP), maximum size (10 MB), and decoded via OpenCV to prevent corrupt input.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">2</div>
+                    <div class="feature-text">
+                        <h4>Pretrained YOLO11n Inference</h4>
+                        <p>Ultralytics YOLO11 nano model detects 80 COCO dataset classes in a single forward pass with high frame rate and low latency.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">3</div>
+                    <div class="feature-text">
+                        <h4>OpenCV Visualization</h4>
+                        <p>High-contrast color-coded bounding boxes, class labels, and percentage confidence badges are rendered onto the image.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">4</div>
+                    <div class="feature-text">
+                        <h4>Analytics & Export</h4>
+                        <p>Extracts class-wise counts, bounding box coordinates, benchmark processing time, and provides high-resolution download.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p><strong>Python Internship Project:</strong> Image Recognition and Object Detection System</p>
+            <p class="footer-subtext">Powered by Python, Flask, OpenCV & Ultralytics YOLO11n. Academic Presentation Ready.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

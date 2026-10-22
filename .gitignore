@@ -1,0 +1,38 @@
+# Python Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch / Ultralytics YOLO Weights
+*.pt
+*.pth
+*.onnx
+yolo11n.pt
+runs/
+
+# User uploads and generated results (keep folder structure intact with .gitkeep)
+uploads/*
+!uploads/.gitkeep
+results/*
+!results/.gitkeep
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
